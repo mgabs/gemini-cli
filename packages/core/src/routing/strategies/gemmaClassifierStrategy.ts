@@ -210,6 +210,7 @@ ${formattedHistory}
       const reasoning = routerResponse.reasoning;
       const latencyMs = Date.now() - startTime;
       const selectedModel = resolveClassifierModel(
+        config,
         context.requestedModel ?? config.getModel(),
         routerResponse.model_choice,
       );

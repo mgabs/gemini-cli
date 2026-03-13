@@ -89,6 +89,16 @@ export const DEFAULT_MODEL_CONFIGS: ModelConfigServiceConfig = {
         model: 'gemini-2.5-flash-lite',
       },
     },
+    'local-mlx-model': {
+      extends: 'chat-base-3',
+      modelConfig: {
+        model: 'local-mlx-model',
+      },
+    },
+    'local-mlx': {
+      extends: 'local-mlx-model',
+      modelConfig: {},
+    },
     // Bases for the internal model configs.
     'gemini-2.5-flash-base': {
       extends: 'base',

@@ -152,6 +152,7 @@ export class NumericalClassifierStrategy implements RoutingStrategy {
         config.getUseCustomToolModel(),
       ]);
       const selectedModel = resolveClassifierModel(
+        config,
         model,
         modelAlias,
         useGemini3_1,

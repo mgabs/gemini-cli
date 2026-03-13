@@ -12,6 +12,7 @@ export const PREVIEW_GEMINI_FLASH_MODEL = 'gemini-3-flash-preview';
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.5-pro';
 export const DEFAULT_GEMINI_FLASH_MODEL = 'gemini-2.5-flash';
 export const DEFAULT_GEMINI_FLASH_LITE_MODEL = 'gemini-2.5-flash-lite';
+export const LOCAL_MLX_MODEL = 'local-mlx-model';
 
 export const VALID_GEMINI_MODELS = new Set([
   PREVIEW_GEMINI_MODEL,
@@ -31,12 +32,14 @@ export const GEMINI_MODEL_ALIAS_AUTO = 'auto';
 export const GEMINI_MODEL_ALIAS_PRO = 'pro';
 export const GEMINI_MODEL_ALIAS_FLASH = 'flash';
 export const GEMINI_MODEL_ALIAS_FLASH_LITE = 'flash-lite';
+export const GEMINI_MODEL_ALIAS_LOCAL_MLX = 'local-mlx';
 
 export const VALID_ALIASES = new Set([
   GEMINI_MODEL_ALIAS_AUTO,
   GEMINI_MODEL_ALIAS_PRO,
   GEMINI_MODEL_ALIAS_FLASH,
   GEMINI_MODEL_ALIAS_FLASH_LITE,
+  GEMINI_MODEL_ALIAS_LOCAL_MLX,
   PREVIEW_GEMINI_MODEL_AUTO,
   DEFAULT_GEMINI_MODEL_AUTO,
 ]);
@@ -88,6 +91,10 @@ export function resolveModel(
       resolved = DEFAULT_GEMINI_FLASH_LITE_MODEL;
       break;
     }
+    case GEMINI_MODEL_ALIAS_LOCAL_MLX: {
+      resolved = LOCAL_MLX_MODEL;
+      break;
+    }
     default: {
       resolved = requestedModel;
       break;
@@ -118,20 +125,27 @@ export function resolveModel(
   return resolved;
 }
 
+import type { Config } from './config.js';
+
 /**
  * Resolves the appropriate model based on the classifier's decision.
  *
+ * @param config The current configuration.
  * @param requestedModel The current requested model (e.g. auto-gemini-2.5).
  * @param modelAlias The alias selected by the classifier ('flash' or 'pro').
  * @returns The resolved concrete model name.
  */
 export function resolveClassifierModel(
+  config: Config,
   requestedModel: string,
   modelAlias: string,
   useGemini3_1: boolean = false,
   useCustomToolModel: boolean = false,
 ): string {
   if (modelAlias === GEMINI_MODEL_ALIAS_FLASH) {
+    if (isAutoModel(requestedModel) && config.getLocalMlxSettings()?.enabled) {
+      return LOCAL_MLX_MODEL;
+    }
     if (
       requestedModel === DEFAULT_GEMINI_MODEL_AUTO ||
       requestedModel === DEFAULT_GEMINI_MODEL
@@ -214,6 +228,16 @@ export function isGemini2Model(model: string): boolean {
 }
 
 /**
+ * Checks if the model is a Local MLX model.
+ *
+ * @param model The model name to check.
+ * @returns True if the model is a Local MLX model.
+ */
+export function isLocalMlxModel(model: string): boolean {
+  return model === LOCAL_MLX_MODEL || model === GEMINI_MODEL_ALIAS_LOCAL_MLX;
+}
+
+/**
  * Checks if the model is a "custom" model (not Gemini branded).
  *
  * @param model The model name to check.
@@ -221,7 +245,7 @@ export function isGemini2Model(model: string): boolean {
  */
 export function isCustomModel(model: string): boolean {
   const resolved = resolveModel(model);
-  return !resolved.startsWith('gemini-');
+  return !resolved.startsWith('gemini-') || isLocalMlxModel(resolved);
 }
 
 /**

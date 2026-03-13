@@ -56,6 +56,7 @@ export class ApprovalModeStrategy implements RoutingStrategy {
     // 1. Planning Phase: If ApprovalMode === PLAN, explicitly route to the Pro model.
     if (approvalMode === ApprovalMode.PLAN) {
       const proModel = resolveClassifierModel(
+        config,
         model,
         GEMINI_MODEL_ALIAS_PRO,
         useGemini3_1,
@@ -72,6 +73,7 @@ export class ApprovalModeStrategy implements RoutingStrategy {
     } else if (approvedPlanPath) {
       // 2. Implementation Phase: If ApprovalMode !== PLAN AND an approved plan path is set, prefer the Flash model.
       const flashModel = resolveClassifierModel(
+        config,
         model,
         GEMINI_MODEL_ALIAS_FLASH,
         useGemini3_1,

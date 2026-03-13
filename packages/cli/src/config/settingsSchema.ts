@@ -1961,6 +1961,59 @@ const SETTINGS_SCHEMA = {
           },
         },
       },
+      localMlx: {
+        type: 'object',
+        label: 'Local MLX',
+        category: 'Experimental',
+        requiresRestart: true,
+        default: {},
+        description: 'Enable Local MLX SLM (experimental).',
+        showInDialog: false,
+        properties: {
+          enabled: {
+            type: 'boolean',
+            label: 'Enable Local MLX',
+            category: 'Experimental',
+            requiresRestart: true,
+            default: false,
+            description:
+              'Enable the Local MLX SLM (experimental). Requires a local endpoint serving a model via mlx-lm.',
+            showInDialog: false,
+          },
+          host: {
+            type: 'string',
+            label: 'Host',
+            category: 'Experimental',
+            requiresRestart: true,
+            default: 'http://localhost:8080',
+            description: 'The host of the MLX server.',
+            showInDialog: false,
+          },
+          model: {
+            type: 'string',
+            label: 'Model',
+            category: 'Experimental',
+            requiresRestart: true,
+            default: 'mlx-community/DeepSeek-R1-Distill-Llama-8B-4bit',
+            description: 'The model to use on the MLX server.',
+            showInDialog: false,
+          },
+          command: {
+            type: 'string',
+            label: 'Command',
+            category: 'Experimental',
+            requiresRestart: true,
+            default: undefined as string | undefined,
+            description: oneLine`
+              The command to start the MLX server.
+              If not specified, the CLI will not start the server and expects it to be already running.
+              You can use {model} placeholder to refer to the configured model.
+              Example: "python -m mlx_lm.server --model {model}"
+            `,
+            showInDialog: false,
+          },
+        },
+      },
     },
   },
 

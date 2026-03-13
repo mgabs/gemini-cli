@@ -36,6 +36,9 @@ describe('GemmaClassifierStrategy', () => {
         enabled: true,
         classifier: { model: 'gemma3-1b-gpu-custom' },
       }),
+      getLocalMlxSettings: vi.fn().mockReturnValue({
+        enabled: false,
+      }),
       getModel: () => DEFAULT_GEMINI_MODEL,
       getPreviewFeatures: () => false,
     } as unknown as Config;

@@ -16,6 +16,8 @@ import {
   DEFAULT_GEMINI_FLASH_MODEL,
   DEFAULT_GEMINI_FLASH_LITE_MODEL,
   DEFAULT_GEMINI_MODEL_AUTO,
+  LOCAL_MLX_MODEL,
+  GEMINI_MODEL_ALIAS_LOCAL_MLX,
   ModelSlashCommandEvent,
   logModelSlashCommand,
   getDisplayString,
@@ -56,6 +58,7 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       PREVIEW_GEMINI_3_1_MODEL,
       PREVIEW_GEMINI_3_1_CUSTOM_TOOLS_MODEL,
       PREVIEW_GEMINI_FLASH_MODEL,
+      LOCAL_MLX_MODEL,
     ];
     if (manualModels.includes(preferredModel)) {
       return preferredModel;
@@ -101,6 +104,15 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       },
     ];
 
+    if (settings.merged.experimental.localMlx.enabled) {
+      list.unshift({
+        value: GEMINI_MODEL_ALIAS_LOCAL_MLX,
+        title: 'Local MLX',
+        description: `Run tasks locally using ${settings.merged.experimental.localMlx.model}`,
+        key: GEMINI_MODEL_ALIAS_LOCAL_MLX,
+      });
+    }
+
     if (shouldShowPreviewModels) {
       list.unshift({
         value: PREVIEW_GEMINI_MODEL_AUTO,
@@ -112,7 +124,13 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       });
     }
     return list;
-  }, [shouldShowPreviewModels, manualModelSelected, useGemini31]);
+  }, [
+    shouldShowPreviewModels,
+    manualModelSelected,
+    useGemini31,
+    settings.merged.experimental.localMlx.enabled,
+    settings.merged.experimental.localMlx.model,
+  ]);
 
   const manualOptions = useMemo(() => {
     const list = [
@@ -132,6 +150,14 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
         key: DEFAULT_GEMINI_FLASH_LITE_MODEL,
       },
     ];
+
+    if (settings.merged.experimental.localMlx.enabled) {
+      list.push({
+        value: LOCAL_MLX_MODEL,
+        title: `Local MLX (${settings.merged.experimental.localMlx.model})`,
+        key: LOCAL_MLX_MODEL,
+      });
+    }
 
     if (shouldShowPreviewModels) {
       const previewProModel = useGemini31
@@ -156,7 +182,13 @@ export function ModelDialog({ onClose }: ModelDialogProps): React.JSX.Element {
       );
     }
     return list;
-  }, [shouldShowPreviewModels, useGemini31, useCustomToolModel]);
+  }, [
+    shouldShowPreviewModels,
+    useGemini31,
+    useCustomToolModel,
+    settings.merged.experimental.localMlx.enabled,
+    settings.merged.experimental.localMlx.model,
+  ]);
 
   const options = view === 'main' ? mainOptions : manualOptions;
 

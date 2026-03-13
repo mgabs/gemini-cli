@@ -334,6 +334,28 @@ gemini
 - [**FAQ**](./docs/resources/faq.md) - Frequently asked questions.
 - Use `/bug` command to report issues directly from the CLI.
 
+### Local Models (MLX SLM)
+
+Run "simple" tasks locally on your M3 Apple Silicon to save on cloud calls and
+reduce latency. Configure the local SLM in `~/.gemini/settings.json`:
+
+```json
+{
+  "experimental": {
+    "localMlx": {
+      "enabled": true,
+      "command": "python -m mlx_lm.server --model {model}",
+      "model": "mlx-community/DeepSeek-R1-Distill-Llama-8B-4bit",
+      "host": "http://localhost:8080"
+    }
+  }
+}
+```
+
+Once configured, the CLI will automatically manage the local server lifecycle.
+Use `/model auto` to let the CLI intelligently route simple tasks locally, or
+`/model local-mlx` to force local execution.
+
 ### Using MCP Servers
 
 Configure MCP servers in `~/.gemini/settings.json` to extend Gemini CLI with

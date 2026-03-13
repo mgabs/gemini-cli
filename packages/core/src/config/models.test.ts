@@ -35,7 +35,9 @@ import {
   getValidModelsAndAliases,
   VALID_GEMINI_MODELS,
   VALID_ALIASES,
+  LOCAL_MLX_MODEL,
 } from './models.js';
+import type { Config } from './config.js';
 
 describe('isPreviewModel', () => {
   it('should return true for preview models', () => {
@@ -303,15 +305,42 @@ describe('isAutoModel', () => {
 });
 
 describe('resolveClassifierModel', () => {
-  it('should return flash model when alias is flash', () => {
+  const mockConfig = {
+    getLocalMlxSettings: () => ({ enabled: false }),
+  } as Config;
+
+  const mockConfigMlxEnabled = {
+    getLocalMlxSettings: () => ({ enabled: true }),
+  } as Config;
+
+  it('should return local-mlx-model when local MLX is enabled and alias is flash for auto models', () => {
     expect(
       resolveClassifierModel(
+        mockConfigMlxEnabled,
+        GEMINI_MODEL_ALIAS_AUTO,
+        GEMINI_MODEL_ALIAS_FLASH,
+      ),
+    ).toBe(LOCAL_MLX_MODEL);
+    expect(
+      resolveClassifierModel(
+        mockConfigMlxEnabled,
+        PREVIEW_GEMINI_MODEL_AUTO,
+        GEMINI_MODEL_ALIAS_FLASH,
+      ),
+    ).toBe(LOCAL_MLX_MODEL);
+  });
+
+  it('should return flash model when local MLX is disabled and alias is flash', () => {
+    expect(
+      resolveClassifierModel(
+        mockConfig,
         DEFAULT_GEMINI_MODEL_AUTO,
         GEMINI_MODEL_ALIAS_FLASH,
       ),
     ).toBe(DEFAULT_GEMINI_FLASH_MODEL);
     expect(
       resolveClassifierModel(
+        mockConfig,
         PREVIEW_GEMINI_MODEL_AUTO,
         GEMINI_MODEL_ALIAS_FLASH,
       ),
@@ -320,16 +349,25 @@ describe('resolveClassifierModel', () => {
 
   it('should return pro model when alias is pro', () => {
     expect(
-      resolveClassifierModel(DEFAULT_GEMINI_MODEL_AUTO, GEMINI_MODEL_ALIAS_PRO),
+      resolveClassifierModel(
+        mockConfig,
+        DEFAULT_GEMINI_MODEL_AUTO,
+        GEMINI_MODEL_ALIAS_PRO,
+      ),
     ).toBe(DEFAULT_GEMINI_MODEL);
     expect(
-      resolveClassifierModel(PREVIEW_GEMINI_MODEL_AUTO, GEMINI_MODEL_ALIAS_PRO),
+      resolveClassifierModel(
+        mockConfig,
+        PREVIEW_GEMINI_MODEL_AUTO,
+        GEMINI_MODEL_ALIAS_PRO,
+      ),
     ).toBe(PREVIEW_GEMINI_MODEL);
   });
 
   it('should return Gemini 3.1 Pro when alias is pro and useGemini3_1 is true', () => {
     expect(
       resolveClassifierModel(
+        mockConfig,
         PREVIEW_GEMINI_MODEL_AUTO,
         GEMINI_MODEL_ALIAS_PRO,
         true,
@@ -340,6 +378,7 @@ describe('resolveClassifierModel', () => {
   it('should return Gemini 3.1 Pro Custom Tools when alias is pro, useGemini3_1 is true, and useCustomToolModel is true', () => {
     expect(
       resolveClassifierModel(
+        mockConfig,
         PREVIEW_GEMINI_MODEL_AUTO,
         GEMINI_MODEL_ALIAS_PRO,
         true,

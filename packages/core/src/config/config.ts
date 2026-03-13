@@ -57,6 +57,7 @@ import {
   DEFAULT_GEMINI_MODEL_AUTO,
   isAutoModel,
   isPreviewModel,
+  isLocalMlxModel,
   PREVIEW_GEMINI_FLASH_MODEL,
   PREVIEW_GEMINI_MODEL,
   PREVIEW_GEMINI_MODEL_AUTO,
@@ -96,6 +97,7 @@ import type {
 } from '../fallback/types.js';
 import { ModelAvailabilityService } from '../availability/modelAvailabilityService.js';
 import { ModelRouterService } from '../routing/modelRouterService.js';
+import { LocalSlmProcessService } from '../services/localSlmProcessService.js';
 import { OutputFormat } from '../output/types.js';
 import {
   ModelConfigService,
@@ -204,6 +206,13 @@ export interface GemmaModelRouterSettings {
     host?: string;
     model?: string;
   };
+}
+
+export interface LocalMlxSettings {
+  enabled?: boolean;
+  host?: string;
+  model?: string;
+  command?: string;
 }
 
 export interface ExtensionSetting {
@@ -589,6 +598,7 @@ export interface ConfigParameters {
   policyUpdateConfirmationRequest?: PolicyUpdateConfirmationRequest;
   output?: OutputSettings;
   gemmaModelRouter?: GemmaModelRouterSettings;
+  localMlx?: LocalMlxSettings;
   disableModelRouterForAuth?: AuthType[];
   continueOnFailedApiCall?: boolean;
   retryFetchErrors?: boolean;
@@ -687,6 +697,7 @@ export class Config implements McpContext, AgentLoopContext {
   private baseLlmClient!: BaseLlmClient;
   private localLiteRtLmClient?: LocalLiteRtLmClient;
   private modelRouterService: ModelRouterService;
+  private localSlmProcessService: LocalSlmProcessService;
   private readonly modelAvailabilityService: ModelAvailabilityService;
   private readonly fileFiltering: {
     respectGitIgnore: boolean;
@@ -788,6 +799,7 @@ export class Config implements McpContext, AgentLoopContext {
   private readonly outputSettings: OutputSettings;
 
   private readonly gemmaModelRouter: GemmaModelRouterSettings;
+  private readonly localMlx: LocalMlxSettings;
 
   private readonly continueOnFailedApiCall: boolean;
   private readonly retryFetchErrors: boolean;
@@ -1054,6 +1066,14 @@ export class Config implements McpContext, AgentLoopContext {
           params.gemmaModelRouter?.classifier?.model ?? 'gemma3-1b-gpu-custom',
       },
     };
+    this.localMlx = {
+      enabled: params.localMlx?.enabled ?? false,
+      host: params.localMlx?.host ?? 'http://localhost:8080',
+      model:
+        params.localMlx?.model ??
+        'mlx-community/DeepSeek-R1-Distill-Llama-8B-4bit',
+      command: params.localMlx?.command,
+    };
     this.retryFetchErrors = params.retryFetchErrors ?? true;
     this.maxAttempts = Math.min(
       params.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
@@ -1101,6 +1121,7 @@ export class Config implements McpContext, AgentLoopContext {
     }
     this._geminiClient = new GeminiClient(this);
     this.modelRouterService = new ModelRouterService(this);
+    this.localSlmProcessService = new LocalSlmProcessService(this);
 
     // HACK: The settings loading logic doesn't currently merge the default
     // generation config with the user's settings. This means if a user provides
@@ -1245,6 +1266,7 @@ export class Config implements McpContext, AgentLoopContext {
     }
 
     await this._geminiClient.initialize();
+    await this.localSlmProcessService.start();
     this.initialized = true;
   }
 
@@ -1280,9 +1302,13 @@ export class Config implements McpContext, AgentLoopContext {
       this.contentGeneratorConfig.authType = undefined;
     }
 
+    const resolvedAuthMethod = isLocalMlxModel(this.model)
+      ? AuthType.LOCAL_MLX
+      : authMethod;
+
     const newContentGeneratorConfig = await createContentGeneratorConfig(
       this,
-      authMethod,
+      resolvedAuthMethod,
       apiKey,
       baseUrl,
       customHeaders,
@@ -1296,7 +1322,11 @@ export class Config implements McpContext, AgentLoopContext {
     this.contentGeneratorConfig = newContentGeneratorConfig;
 
     // Initialize BaseLlmClient now that the ContentGenerator is available
-    this.baseLlmClient = new BaseLlmClient(this.contentGenerator, this);
+    this.baseLlmClient = new BaseLlmClient(
+      this.contentGenerator,
+      this,
+      resolvedAuthMethod,
+    );
 
     const codeAssistServer = getCodeAssistServer(this);
     const quotaPromise = codeAssistServer?.projectId
@@ -2874,6 +2904,10 @@ export class Config implements McpContext, AgentLoopContext {
     return this.gemmaModelRouter;
   }
 
+  getLocalMlxSettings(): LocalMlxSettings {
+    return this.localMlx;
+  }
+
   /**
    * Get override settings for a specific agent.
    * Reads from agents.overrides.<agentName>.
@@ -3193,6 +3227,7 @@ export class Config implements McpContext, AgentLoopContext {
     if (this.mcpClientManager) {
       await this.mcpClientManager.stop();
     }
+    await this.localSlmProcessService.stop();
   }
 }
 // Export model constants for use in CLI

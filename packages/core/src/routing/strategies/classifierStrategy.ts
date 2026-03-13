@@ -176,6 +176,7 @@ export class ClassifierStrategy implements RoutingStrategy {
         config.getUseCustomToolModel(),
       ]);
       const selectedModel = resolveClassifierModel(
+        config,
         model,
         routerResponse.model_choice,
         useGemini3_1,

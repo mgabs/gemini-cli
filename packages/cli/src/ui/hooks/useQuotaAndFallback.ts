@@ -17,6 +17,7 @@ import {
   VALID_GEMINI_MODELS,
   isProModel,
   isOverageEligibleModel,
+  isLocalMlxModel,
   getDisplayString,
   type GeminiUserTier,
 } from '@google/gemini-cli-core';
@@ -135,7 +136,14 @@ export function useQuotaAndFallback({
         message = messageLines.join('\n');
       } else if (error instanceof ModelNotFoundError) {
         isModelNotFoundError = true;
-        if (VALID_GEMINI_MODELS.has(failedModel)) {
+        if (isLocalMlxModel(failedModel)) {
+          const messageLines = [
+            `Model "${failedModel}" was not found on your local MLX server.`,
+            `Please check if the MLX server is running and the model is loaded correctly.`,
+            `/model to switch models.`,
+          ];
+          message = messageLines.join('\n');
+        } else if (VALID_GEMINI_MODELS.has(failedModel)) {
           const messageLines = [
             `It seems like you don't have access to ${getDisplayString(failedModel)}.`,
             `Your admin might have disabled the access. Contact them to enable the Preview Release Channel.`,
